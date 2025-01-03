@@ -1,3 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.ag-row-active {
+    background-color: #d1e7dd !important;
+}
