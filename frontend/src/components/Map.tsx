@@ -11,13 +11,16 @@ interface Device {
   }
 
   interface MapProps {
-    activeDevice?: Device;
+    selectedDevice?: Device;  // Currently selected device
+    //filteredDevices: Device[];// Filtered devices to display on the map
 }
 
-export default function Map({ activeDevice } : MapProps) {
+export default function Map({ selectedDevice } : MapProps) {
   const mapRef = useRef(null);
   const mapContainerRef = useRef(null);
+  const markersRef = useRef<mapboxgl.Marker[]>([]);
   const [devices, setDevices] = useState<Device[]>([]);
+
 
   // Set up map default values
   useEffect(() => {
@@ -35,6 +38,7 @@ export default function Map({ activeDevice } : MapProps) {
     };
   }, []);
 
+
   // Synchronize Map with external data.
   useEffect(() => {
     fetch("http://localhost:3000/data/devices")
@@ -43,29 +47,50 @@ export default function Map({ activeDevice } : MapProps) {
     .catch((error) => console.error("Error fetching devices:", error));
   }, []);
 
+
   // Add fecthed devices to map.
   useEffect(() => {
+    // Clear existing markers.
+    // markersRef.current.forEach((marker) => marker.remove());
+    // markersRef.current = [];
+
+    // // Add markers.
+    // filteredDevices.forEach((filteredDevice) => {
+    //     const marker = new mapboxgl.Marker()
+    //         .setLngLat([filteredDevice.longitude, filteredDevice.latitude])
+    //         .addTo(mapRef.current!);
+    //     markersRef.current.push(marker);
+    // });
+    // if(selectedDevice) {
+    //     mapRef.current?.flyTo({
+    //         center: [selectedDevice.longitude, selectedDevice.latitude],
+    //         zoom: 10,
+    //     });
+    // }
+
     if(mapRef.current && devices.length) {
         devices.forEach((device) => {
             new mapboxgl.Marker({color: device.status === "active" ? "green" : "red"})
             .setLngLat([device.longitude, device.latitude])
             .setPopup(new mapboxgl.Popup().setText(device.name))
-            .addTo(mapRef.current);
+            .addTo(mapRef.current!);
         });
     }
   }, [devices]);
 
 
+  // Change map location to the selected device's location.
   useEffect(() => {
-    if(mapRef.current && activeDevice) {
-        // Change map location to the selected device's location.
+    if(mapRef.current && selectedDevice) {
         mapRef.current.flyTo({
-            center: [activeDevice.longitude, activeDevice.latitude],
+            center: [selectedDevice.longitude, selectedDevice.latitude],
             zoom: 8,
             essential: true,
         });
     }
-  }, [activeDevice]);
+  }, [selectedDevice]);
+
+
 
 
   return <div className="h-full w-full" id="map-container" ref={mapContainerRef} />;

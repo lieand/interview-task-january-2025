@@ -14,9 +14,10 @@ interface Device {
 
 interface DeviceListProps {
     onDeviceSelect: (device: Device) => void;
+    //onFilterChange: (filteredDevices: Device[]) => void;
 }
 
-export default function DeviceList({ onDeviceSelect } : DeviceListProps) {
+export default function DeviceList({ onDeviceSelect} : DeviceListProps) {
 
     const [loading, setLoading] = useState(true);
     const gridApiRef = useRef<GridApi | null>(null);
@@ -77,11 +78,11 @@ export default function DeviceList({ onDeviceSelect } : DeviceListProps) {
         const selectedStatus = event.target.value;
         setFilterStatus(selectedStatus);
 
-        if(selectedStatus === "all") {
-            setRowData(originalData);
-        } else {
-            setRowData(originalData.filter((device) => device.status === selectedStatus));
-        }
+        const filteredData = selectedStatus === "all" ? originalData
+        : originalData.filter((device) => device.status === selectedStatus);
+        
+        setRowData(filteredData);
+        //onFilterChange(filteredData);
     }
 
 
@@ -91,7 +92,8 @@ export default function DeviceList({ onDeviceSelect } : DeviceListProps) {
         .then((response) => response.json())
         .then((data) => {
             setRowData(data);    
-            setOriginalData(data);                   
+            setOriginalData(data);   
+            //onFilterChange(data);                
             setLoading(false);
         })
         .catch((error) => {
