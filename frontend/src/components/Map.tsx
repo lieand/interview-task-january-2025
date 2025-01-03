@@ -10,11 +10,16 @@ interface Device {
     status: string;
   }
 
-export default function Map() {
+  interface MapProps {
+    activeDevice?: Device;
+}
+
+export default function Map({ activeDevice } : MapProps) {
   const mapRef = useRef(null);
   const mapContainerRef = useRef(null);
   const [devices, setDevices] = useState<Device[]>([]);
 
+  // Set up map default values
   useEffect(() => {
     mapboxgl.accessToken = "pk.eyJ1IjoiaHNqb2hhbnNlbiIsImEiOiJjbTVlOWQ1cDAyNnR4MmxyNzJtZmhvMmVmIn0.aRUwNHNNmYO7e0TrCs7Ksg";
 
@@ -30,6 +35,7 @@ export default function Map() {
     };
   }, []);
 
+  // Synchronize Map with external data.
   useEffect(() => {
     fetch("http://localhost:3000/data/devices")
     .then((response) => response.json())
@@ -37,6 +43,7 @@ export default function Map() {
     .catch((error) => console.error("Error fetching devices:", error));
   }, []);
 
+  // Add fecthed devices to map.
   useEffect(() => {
     if(mapRef.current && devices.length) {
         devices.forEach((device) => {
@@ -47,6 +54,18 @@ export default function Map() {
         });
     }
   }, [devices]);
+
+
+  useEffect(() => {
+    if(mapRef.current && activeDevice) {
+        // Change map location to the selected device's location.
+        mapRef.current.flyTo({
+            center: [activeDevice.longitude, activeDevice.latitude],
+            zoom: 8,
+            essential: true,
+        });
+    }
+  }, [activeDevice]);
 
 
   return <div className="h-full w-full" id="map-container" ref={mapContainerRef} />;
