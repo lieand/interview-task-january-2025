@@ -21,6 +21,10 @@ export default function DeviceList({ onDeviceSelect } : DeviceListProps) {
     const [loading, setLoading] = useState(true);
     const gridApiRef = useRef<GridApi | null>(null);
 
+    // Filter status & original data
+    const [filterStatus, setFilterStatus] = useState<string>("all");
+    const [originalData, setOriginalData] = useState<Device[]>([]);
+
     // Active Device Data.
     const [activeDeviceId, setActiveDeviceId] = useState<number | null>(null);
 
@@ -61,18 +65,33 @@ export default function DeviceList({ onDeviceSelect } : DeviceListProps) {
         console.log("Selected Device:", clickedDevice.id )
     };
 
+
     // Highlight selected row.
     const rowClass = {
         "ag-row-active": (params: any) => params.data.id === activeDeviceId,
     };
     
 
+    //
+    const handleFilterChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        const selectedStatus = event.target.value;
+        setFilterStatus(selectedStatus);
+
+        if(selectedStatus === "all") {
+            setRowData(originalData);
+        } else {
+            setRowData(originalData.filter((device) => device.status === selectedStatus));
+        }
+    }
+
+
     // Synchronize DeviceList with external data.
     useEffect(() => {
         fetch("http://localhost:3000/data/devices") // Data source
         .then((response) => response.json())
         .then((data) => {
-            setRowData(data);                       
+            setRowData(data);    
+            setOriginalData(data);                   
             setLoading(false);
         })
         .catch((error) => {
@@ -81,31 +100,54 @@ export default function DeviceList({ onDeviceSelect } : DeviceListProps) {
         });
     }, []);
 
+
     // Grid initialization
     const onGridReady = (params: any) => {
         gridApiRef.current = params.api;
     }
 
 
+
+
     return (
-        <div className="h-full w-full">
-            {loading ? (
-                <p>Loading...</p>
-            ) : (
-                <AgGridReact
-                    onRowClicked={rowClickListener}     // Row click listener
-                    rowClassRules={rowClass}           // Active row styling
-                    rowSelection="single"
-                    onGridReady={onGridReady}           // Store gridApi when grid is ready
-                    rowData={rowData}
-                    columnDefs={colDefs}
-                    defaultColDef={{
-                    sortable: true,
-                    filter: true,
-                    flex: 1,
-                }}
-                />
-            )}
+        <div className="h-full w-full flex flex-col">
+            <div className="p-2">
+                <label htmlFor="status-filter" className="mr-2">
+                    Filter by Status:
+                </label>
+
+                <select
+                    id="status-filter"
+                    value={filterStatus}
+                    onChange={handleFilterChange}
+                    className="border rounded px-2 py-1"
+                >
+                    <option value="all">All</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </div>
+
+            <div className="h-full w-full">
+                {loading ? (
+                    <p>Loading...</p>
+                ) : (
+                    <AgGridReact
+                        onRowClicked={rowClickListener}     // Row click listener
+                        rowClassRules={rowClass}           // Active row styling
+                        rowSelection="single"
+                        onGridReady={onGridReady}           // Store gridApi when grid is ready
+                        rowData={rowData}
+                        columnDefs={colDefs}
+                        defaultColDef={{
+                        sortable: true,
+                        filter: true,
+                        flex: 1,
+                    }}
+                    />
+                )}
+            </div>
         </div>
+        
     );
 }
