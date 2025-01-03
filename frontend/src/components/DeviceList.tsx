@@ -1,22 +1,65 @@
-import React, { useState } from "react";
-import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
+import React, { useState, useEffect, useMemo } from "react";
+import { AllCommunityModule, ModuleRegistry, ColDef } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 ModuleRegistry.registerModules([AllCommunityModule]);
 
+interface Device {
+    id: number;
+    name: string;
+    latitude: number;
+    longitude: number;
+    status: string;
+}
+
+
 export default function DeviceList() {
-  // Row Data: The data to be displayed.
-  const [rowData] = useState([
-    { make: "Tesla", model: "Model Y", price: 64950, electric: true },
-    { make: "Ford", model: "F-Series", price: 33850, electric: false },
-    { make: "Toyota", model: "Corolla", price: 29600, electric: false },
-  ]);
+    // Row Data: The data to be displayed.
+    const [rowData, setRowData] = useState<Device[]>([]);
+    const [loading, setLoading] = useState(true);
 
-  // Column Definitions: Defines the columns to be displayed.
-  const [colDefs] = useState<any[]>([{ field: "make" }, { field: "model" }, { field: "price" }, { field: "electric" }]);
+    // Column Definitions: Defines the columns to be displayed.
+    const colDefs: ColDef<Device>[] = [
+        {field: "id", headerName: "ID"},
+        {field: "name", headerName: "Name"},
+        {field: "latitude", headerName: "Latitude"},
+        {field: "longitude", headerName: "Longitude"},
+        {field: "status", headerName: "Status"},
+    ];
 
-  return (
-    <div className="h-full w-full">
-      <AgGridReact rowData={rowData} columnDefs={colDefs} />
-    </div>
-  );
+
+
+    
+
+    // Synchronize DeviceList with external data.
+    useEffect(() => {
+        fetch("http://localhost:3000/data/devices") // Data source
+        .then((response) => response.json())
+        .then((data) => {
+            setRowData(data);                       
+            setLoading(false);
+        })
+        .catch((error) => {
+            console.error("Error fetching devices:", error);
+            setLoading(false);
+        });
+    }, []);
+
+
+    return (
+        <div className="h-full w-full">
+            {loading ? (
+                <p>Loading...</p>
+            ) : (
+                <AgGridReact
+                    rowData={rowData}
+                    columnDefs={colDefs}
+                    defaultColDef={{
+                    sortable: true,
+                    filter: true,
+                    flex: 1,
+                }}
+                />
+            )}
+        </div>
+    );
 }
